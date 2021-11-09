@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components/native';
 import colors from '../colors';
+import {useDB} from '../context';
 
 const View = styled.View`
   flex: 1;
@@ -43,27 +44,66 @@ const Emotions = styled.View`
   margin-bottom: 20px;
 `;
 
-// const Emotion = styled.Pressable`
-//   background-color: white;
-//   padding: 10px;
-//   border-radius: 10px;
-//   /* box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1); */
-//   /* elevation: 5; */
-//   border-color: ${props =>
-//     props.selected ? 'rgba(103, 128, 159, 0.5)' : 'white'};
-//   border-width: ${props => (props.selected ? '1px' : '0px')};
-// `;
+const Emotion = styled.Pressable`
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+  /* box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1); */
+  /* elevation: 5; */
+  border-color: ${props =>
+    props.selected ? 'rgba(103, 128, 159, 0.5)' : 'white'};
+  border-width: ${props => (props.selected ? '1px' : '0px')};
+`;
 
-// const EmotionText = styled.Text`
-//   font-size: 20px;
-// `;
+const EmotionText = styled.Text`
+  font-size: 20px;
+`;
 
 const emotions = ['😀', '😎', '😍', '😥', '😠', '🤑'];
 
-const Write = () => {
+const Write = ({navigation: {goBack}}) => {
+  const realm = useDB();
+  const [selectedEmotion, setEmotion] = useState(null);
+  const [feelings, setFeelings] = useState('');
+  const onChangeText = text => setFeelings(text);
+  const onEmotionPress = face => setEmotion(face);
+  const onSubmit = () => {
+    if (feelings === '' || selectedEmotion == null) {
+      return Alert.alert('Please complete form.');
+    }
+    realm.write(() => {
+      realm.create('Feeling', {
+        _id: Date.now(),
+        emotion: selectedEmotion,
+        message: feelings,
+      });
+    });
+    goBack();
+  };
+
   return (
     <View>
-      <Title>Journal Entry</Title>
+      <Title>How do you feel today?</Title>
+      <Emotions>
+        {emotions.map((emotion, index) => (
+          <Emotion
+            selected={emotion === selectedEmotion}
+            key={index}
+            onPress={() => onEmotionPress(emotion)}>
+            <EmotionText>{emotion}</EmotionText>
+          </Emotion>
+        ))}
+      </Emotions>
+      <TextInput
+        placeholder="Write it here"
+        value={feelings}
+        onChangeText={onChangeText}
+        onSubmitEditing={onSubmit}
+        returnKeyType="done"
+      />
+      <Btn onPress={onSubmit}>
+        <BtnText>Save</BtnText>
+      </Btn>
     </View>
   );
 };

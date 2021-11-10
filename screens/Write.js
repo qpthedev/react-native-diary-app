@@ -1,3 +1,4 @@
+import {AdMobInterstitial, AdMobRewarded} from 'expo-ads-admob';
 import React, {useState} from 'react';
 import styled from 'styled-components/native';
 import colors from '../colors';
@@ -65,20 +66,32 @@ const Write = ({navigation: {goBack}}) => {
   const realm = useDB();
   const [selectedEmotion, setEmotion] = useState(null);
   const [feelings, setFeelings] = useState('');
+
   const onChangeText = text => setFeelings(text);
   const onEmotionPress = face => setEmotion(face);
-  const onSubmit = () => {
+
+  const onSubmit = async () => {
     if (feelings === '' || selectedEmotion == null) {
       return Alert.alert('Please complete form.');
     }
-    realm.write(() => {
-      realm.create('Feeling', {
-        _id: Date.now(),
-        emotion: selectedEmotion,
-        message: feelings,
+
+    // Display a rewarded ad
+    await AdMobRewarded.setAdUnitID('ca-app-pub-3940256099942544/5224354917'); // Test ID, Replace with your-admob-unit-id
+    await AdMobRewarded.requestAdAsync();
+    await AdMobRewarded.showAdAsync();
+
+    AdMobRewarded.addEventListener('rewardedVideoUserDidEarnReward', () => {
+      AdMobRewarded.addEventListener('rewardedVideoDidDismiss', () => {
+        realm.write(() => {
+          realm.create('Feeling', {
+            _id: Date.now(),
+            emotion: selectedEmotion,
+            message: feelings,
+          });
+        });
+        goBack();
       });
     });
-    goBack();
   };
 
   return (

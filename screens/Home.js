@@ -3,7 +3,13 @@ import styled from 'styled-components/native';
 import colors from '../colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDB} from '../context';
-import {FlatList, Pressable} from 'react-native';
+import {
+  FlatList,
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  UIManager,
+} from 'react-native';
 
 const View = styled.View`
   flex: 1;
@@ -52,6 +58,13 @@ const Separator = styled.View`
   height: 10px;
 `;
 
+// LayoutAnimation Android requirement
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
 const Home = ({navigation: {navigate}}) => {
   const realm = useDB();
   // const [feelings, setFeelings] = useState(null);
@@ -60,6 +73,7 @@ const Home = ({navigation: {navigate}}) => {
   useEffect(() => {
     const feelings = realm.objects('Feeling');
     feelings.addListener((feelings, changes) => {
+      LayoutAnimation.spring();
       setFeelings(feelings.sorted('_id', true));
     });
     return () => {
